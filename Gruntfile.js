@@ -17,6 +17,10 @@ module.exports = function(grunt) {
             lib: {
                 src: ['lib/**/*.js']
             },
+            client: {
+                jshintrc: 'client/.jshintrc',
+                src: ['client/**/*.js']
+            },
             test: {
                 src: ['test/**/*.js']
             },
