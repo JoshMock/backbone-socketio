@@ -51,7 +51,7 @@ var socket = io.connect('http://localhost:3000'),
 MyModel = Backbone.Model.extend({ /* normal model init code here */ });
 Cocktail.mixin(MyModel, backboneMixins.mixins.model);
 
-MyCollection = Backbone.Collection.extend({ /* normal collection init code here */});
+MyCollection = Backbone.Collection.extend({ /* normal collection init code here */ });
 Cocktail.mixin(MyCollection, backboneMixins.mixins.collection);
 ```
 
@@ -108,4 +108,5 @@ _(Nothing yet)_
 
 ## License
 Copyright (c) 2013 Josh Mock
+
 Licensed under the MIT license.
