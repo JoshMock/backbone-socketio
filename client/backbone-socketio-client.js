@@ -34,7 +34,7 @@
     //             MyCollection.__super__.initialize.call(this);
     //         }
     //     }));
-    var BackboneSocketio = global.BackboneSocketio = function (ioSocket) {
+    var BackboneSocketio = function (ioSocket) {
         this.mixins = {
             collection: {
                 initialize: function () {
@@ -143,11 +143,14 @@
         };
     };
 
-    // AMD module definition setup
+    // module definition setup
     if (typeof define === 'function' && define.amd) {
         define([], function () {
             return BackboneSocketio;
         });
+    } else if (typeof module !== 'undefined' && module.exports) {
+        module.exports = BackboneSocketio;
+    } else {
+        global.BackboneSocketio = BackboneSocketio;
     }
-
 })(this, Backbone, _);

@@ -32,7 +32,9 @@
     "grunt-contrib-jshint": "~0.6.3",
     "grunt-contrib-nodeunit": "~0.2.0",
     "grunt-contrib-watch": "~0.5.3",
-    "grunt": "~0.4.1"
+    "grunt": "~0.4.1",
+    "backbone": "~1.1.0",
+    "underscore": "~1.5.2"
   },
   "keywords": [
     "backbone",

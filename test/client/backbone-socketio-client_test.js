@@ -1,6 +1,9 @@
 'use strict';
 
-var backbone_socketio = require('../lib/backbone-socketio.js');
+global.Backbone = require('backbone');
+global._ = require('underscore');
+
+var BackboneSocketio = require('../../client/backbone-socketio-client.js');
 
 /*
   ======== A Handy Little Nodeunit Reference ========
@@ -22,22 +25,19 @@ var backbone_socketio = require('../lib/backbone-socketio.js');
     test.ifError(value)
 */
 
-exports['init'] = {
+exports['BackboneSocketio'] = {
     setUp: function (done) {
         done();
     },
 
-    'throws error when no arguments are passed': function (test) {
-        test.expect(1);
-        test.throws(function () { backbone_socketio.init(); }, Error, "Expected one argument; received zero");
-        test.done();
-    },
+    'has `mixins` property with expected keys': function (test) {
+        test.expect(3);
 
-    'throws no error when the socket.io is passed': function (test) {
-        test.expect(1);
-        test.doesNotThrow(function () {
-            backbone_socketio.init({ sockets: { on: function () {} } });
-        }, Error, "Expected one argument; received zero");
+        var bbsio = new BackboneSocketio({});
+
+        test.ok(_.has(bbsio, "mixins"));
+        test.ok(_.has(bbsio.mixins, "collection"));
+        test.ok(_.has(bbsio.mixins, "model"));
         test.done();
     }
 };

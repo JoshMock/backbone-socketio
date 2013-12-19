@@ -17,6 +17,7 @@
         "require": true,
         "define": true,
         "Backbone": true,
-        "_": true
+        "_": true,
+        "global": true
     }
 }
