@@ -1,0 +1,26 @@
+{
+  "name": "backbone-socketio",
+  "version": "0.1.0",
+  "homepage": "https://github.com/JoshMock/backbone-socketio",
+  "authors": [
+    "Josh Mock <josh@joshmock.com>"
+  ],
+  "description": "Realtime two-way data-binding of Backbone model and collection data to a webserver via Socket.io.",
+  "main": "client/backbone-socketio-client.js",
+  "dependencies"  : {
+    "backbone"  : ">=1.0.0"
+  },
+  "keywords": [
+    "backbone",
+    "socketio",
+    "websockets"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
