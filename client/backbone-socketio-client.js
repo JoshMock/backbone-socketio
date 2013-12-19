@@ -6,7 +6,7 @@
     // usage (with [Cocktail](https://github.com/onsi/cocktail)):
     //
     //     var socket = io.connect('http://localhost:3000'),
-    //         backboneMixins = BackboneSocketio(socket),
+    //         backboneMixins = new BackboneSocketio(socket),
     //         MyModel, MyCollection;
     //     
     //     MyModel = Backbone.Model.extend({ /* normal model init code here */ });
@@ -18,7 +18,7 @@
     // usage (without Cocktail):
     //
     //     var socket = io.connect('http://localhost:3000'),
-    //         backboneMixins = BackboneSocketio(socket),
+    //         backboneMixins = new BackboneSocketio(socket),
     //         SocketModel = Backbone.Model.extend(backboneMixins.mixins.model),
     //         SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection),
     //         MyModel, MyCollection;
