@@ -41,7 +41,7 @@ Include the file:
 `<script src="/bower_components/backbone-socketio/client/backbone-socketio.js"></script>`
 
 And mix the event listeners in using
-[Cocktail](https://github.com/onsi/cocktail), or manually with Underscore.
+[Cocktail](https://github.com/onsi/cocktail), or manually with `extend`.
 
 With Cocktail:
 
@@ -58,28 +58,31 @@ Cocktail.mixin(MyCollection, backboneMixins.mixins.collection);
 ```
 
 Without Cocktail:
+
 ```javascript
 var socket = io.connect('http://localhost:3000'),
     backboneMixins = BackboneSocketio(socket),
+    SocketModel = Backbone.Model.extend(backboneMixins.mixins.model),
+    SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection),
     MyModel, MyCollection;
 
-MyModel = Backbone.Model.extend(_.extend(backboneMixins.mixins.model, {
+MyModel = SocketModel.extend({
     // normal model init code here
     initialize: function () {
         // if you need an initialize method make sure you call the parent's
         // initialize function
         MyModel.__super__.initialize.call(this);
     }
-}));
+});
 
-MyCollection = Backbone.Collection.extend(_.extend(backboneMixins.mixins.collection, {
+MyCollection = SocketCollection.extend({
     // normal collection init code here
     initialize: function () {
         // if you need an initialize method make sure you call the parent's
         // initialize function
         MyCollection.__super__.initialize.call(this);
     }
-}));
+});
 ```
 
 This will set up listeners on all the necessary change events on models and

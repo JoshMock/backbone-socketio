@@ -1,8 +1,10 @@
 (function (global, Backbone, _) {
     "use strict";
 
-    // initialization function
-    // usage (with [Cocktail](https://github.com/onsi/cocktail):
+    // ## initialization function
+    //
+    // usage (with [Cocktail](https://github.com/onsi/cocktail)):
+    //
     //     var socket = io.connect('http://localhost:3000'),
     //         backboneMixins = BackboneSocketio(socket),
     //         MyModel, MyCollection;
@@ -17,23 +19,27 @@
     //
     //     var socket = io.connect('http://localhost:3000'),
     //         backboneMixins = BackboneSocketio(socket),
+    //         SocketModel = Backbone.Model.extend(backboneMixins.mixins.model),
+    //         SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection),
     //         MyModel, MyCollection;
     //     
-    //     MyModel = Backbone.Model.extend(_.extend(backboneMixins.mixins.model, {
+    //     MyModel = SocketModel.extend({
     //         // normal model init code here
     //         initialize: function () {
-    //             // if you need an initialize method make sure you call the parent's initialize function
+    //             // if you need an initialize method make sure you call the parent's
+    //             // initialize function
     //             MyModel.__super__.initialize.call(this);
     //         }
-    //     }));
+    //     });
     //     
-    //     MyCollection = Backbone.Collection.extend(_.extend(backboneMixins.mixins.collection, {
+    //     MyCollection = SocketCollection.extend({
     //         // normal collection init code here
     //         initialize: function () {
-    //             // if you need an initialize method make sure you call the parent's initialize function
+    //             // if you need an initialize method make sure you call the parent's
+    //             // initialize function
     //             MyCollection.__super__.initialize.call(this);
     //         }
-    //     }));
+    //     });
     var BackboneSocketio = function (ioSocket) {
         this.mixins = {
             collection: {
