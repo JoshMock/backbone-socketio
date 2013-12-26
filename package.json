@@ -34,7 +34,8 @@
     "grunt-contrib-watch": "~0.5.3",
     "grunt": "~0.4.1",
     "backbone": "~1.1.0",
-    "underscore": "~1.5.2"
+    "underscore": "~1.5.2",
+    "sinon": "~1.7.3"
   },
   "keywords": [
     "backbone",

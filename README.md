@@ -105,6 +105,8 @@ _(Nothing yet)_
 ## TODOs/wish list
 
 - Need minified version of client-side code
+- Only publish changed model data over socket rather than entire JSON
+  representation
 - Put server component on NPM
 - Make client component work with Bower
 - Working listener for collection `sort` events (currently stubbed)

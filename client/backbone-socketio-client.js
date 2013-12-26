@@ -44,7 +44,7 @@
         this.mixins = {
             collection: {
                 initialize: function () {
-                    if (!this instanceof Backbone.Collection) {
+                    if (!(this instanceof Backbone.Collection)) {
                         throw new Error("This object is not a Backbone.Collection");
                     }
 
@@ -117,7 +117,7 @@
 
             model: {
                 initialize: function () {
-                    if (!this instanceof Backbone.Model) {
+                    if (!(this instanceof Backbone.Model)) {
                         throw new Error("This object is not a Backbone.Model");
                     }
 
