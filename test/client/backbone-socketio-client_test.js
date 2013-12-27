@@ -70,8 +70,186 @@ exports['BackboneSocketio collection'] = {
         test.done();
     },
 
-    '_': function (test) {
-        test.expect(0);
+    'emits a socket event whenever an add event happens': function (test) {
+        test.expect(3);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel });
+
+        col.add({});
+        test.ok(fauxIo.emit.calledWith("Backbone.Collection.add", {
+            id: col.socketId,
+            model: {},
+            modelSocketId: col.at(0).socketId,
+            index: 1
+        }));
+
+        col.add({something: "hey"});
+        test.ok(fauxIo.emit.calledWith("Backbone.Collection.add", {
+            id: col.socketId,
+            model: {something: "hey"},
+            modelSocketId: col.at(1).socketId,
+            index: 2
+        }));
+
+        col.add([{a: 1}, {b: 2}]);
+
+        test.equal(fauxIo.emit.callCount, 4);
+
+        test.done();
+    },
+
+    "doesn't emit a socket event if an add event happens but triggeredBySocket option is true": function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            col = new MyCol({ model: Backbone.Model.extend(bbsio.mixins.model) });
+
+        col.add({}, {triggeredBySocket: true});
+        test.equal(fauxIo.emit.callCount, 0);
+
+        test.done();
+    },
+
+    'emits a socket event whenever a remove event happens': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel }),
+            m1 = new MyModel();
+
+        col.add(m1);
+        col.remove(m1);
+        test.deepEqual(fauxIo.emit.getCall(1).args, ["Backbone.Collection.remove", {
+            id: col.socketId,
+            modelSocketId: m1.socketId
+        }]);
+
+        test.done();
+    },
+
+    "doesn't emit a socket event if an remove event happens but triggeredBySocket option is true": function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel }),
+            m1 = new MyModel();
+
+        col.add(m1);
+        col.remove(m1, {triggeredBySocket: true});
+        test.equal(fauxIo.emit.callCount, 1);
+
+        test.done();
+    },
+
+    'collection is updated if matching socket add event is fired': function (test) {
+        test.expect(3);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({model: MyModel}),
+            // this is kind of brittle but it's the easiest way to get the socket.io callback
+            socketCallback = fauxIo.on.getCall(0).args[1],
+            m1 = new MyModel({ aThing: 37 });
+
+        col.on("add", function (m, c, options) {
+            test.equal(options.triggeredBySocket, true);
+            test.equal(options.at, 1);
+            test.equal(m.get("aThing"), 37);
+            test.done();
+        });
+
+        socketCallback({
+            id: col.socketId,
+            model: m1.toJSON(),
+            modelSocketId: m1.socketId,
+            index: 1
+        });
+    },
+
+    'collection is not updated if non-maching socket add event is fired': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({model: MyModel}),
+            socketCallback = fauxIo.on.getCall(0).args[1],
+            m1 = new MyModel({ aThing: 37 }),
+            addSpy = sinon.spy();
+
+        col.on("add", addSpy);
+
+        socketCallback({
+            id: "someRandomId1",
+            model: m1.toJSON(),
+            modelSocketId: m1.socketId,
+            index: 1
+        });
+
+        test.equal(addSpy.callCount, 0);
+        test.done();
+    },
+
+    'collection is updated if matching socket remove event is fired': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({model: MyModel}),
+            socketCallback = fauxIo.on.getCall(1).args[1],
+            m1 = new MyModel();
+
+        col.add(m1);
+
+        col.on("remove", function (m, c, options) {
+            test.equal(options.triggeredBySocket, true);
+            test.done();
+        });
+
+        socketCallback({
+            id: col.socketId,
+            modelSocketId: m1.socketId
+        });
+    },
+
+    'collection is not updated if non-maching socket remove event is fired': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({model: MyModel}),
+            socketCallback = fauxIo.on.getCall(1).args[1],
+            m1 = new MyModel({ aThing: 37 }),
+            removeSpy = sinon.spy();
+
+        col.add(m1);
+        col.on("remove", removeSpy);
+
+        socketCallback({
+            id: "someRandomId1",
+            modelSocketId: m1.socketId
+        });
+
+        test.equal(removeSpy.callCount, 0);
         test.done();
     }
 };
