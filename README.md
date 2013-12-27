@@ -1,4 +1,4 @@
-# backbone-socketio [![Build Status](https://secure.travis-ci.org/JoshMock/backbone-socketio.png?branch=master)](http://travis-ci.org/JoshMock/backbone-socketio)
+# backbone-socketio [![Build Status](https://secure.travis-ci.org/JoshMock/backbone-socketio.png?branch=master)](http://travis-ci.org/JoshMock/backbone-socketio) [![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
 
 Realtime two-way data-binding of Backbone model and collection data to a
 webserver via [Socket.io](http://socket.io). Makes realtime, collaborative
@@ -107,6 +107,8 @@ _(Nothing yet)_
 - Need minified version of client-side code
 - Only publish changed model data over socket rather than entire JSON
   representation
+- Collection validates that its model type is extended with backbone-socketio
+  to ensure "add" events work correctly
 - Put server component on NPM
 - Make client component work with Bower
 - Working listener for collection `sort` events (currently stubbed)
