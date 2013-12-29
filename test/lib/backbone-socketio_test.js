@@ -1,6 +1,12 @@
 'use strict';
 
-var backbone_socketio = require('../../lib/backbone-socketio.js');
+var sinon = require("sinon"),
+    backbone_socketio = require('../../lib/backbone-socketio.js'),
+    MockIo = function () {
+        this.sockets = {
+            on: sinon.spy()
+        };
+    };
 
 /*
   ======== A Handy Little Nodeunit Reference ========
@@ -36,8 +42,55 @@ exports['init'] = {
     'throws no error when the socket.io is passed': function (test) {
         test.expect(1);
         test.doesNotThrow(function () {
-            backbone_socketio.init({ sockets: { on: function () {} } });
+            backbone_socketio.init(new MockIo());
         }, Error, "Expected one argument; received zero");
+        test.done();
+    },
+
+    'listens to all the expected event types on connection': function (test) {
+        test.expect(6);
+
+        var mockIo = new MockIo(),
+            mockSocket = { on: sinon.spy() },
+            connectionCallback;
+
+        backbone_socketio.init(mockIo);
+        test.equal(mockIo.sockets.on.getCall(0).args[0], 'connection');
+        connectionCallback = mockIo.sockets.on.getCall(0).args[1];
+        connectionCallback(mockSocket);
+
+        test.equal(mockSocket.on.getCall(0).args[0], 'Backbone.Model.change');
+        test.equal(mockSocket.on.getCall(1).args[0], 'Backbone.Collection.add');
+        test.equal(mockSocket.on.getCall(2).args[0], 'Backbone.Collection.remove');
+        test.equal(mockSocket.on.getCall(3).args[0], 'Backbone.Collection.sort');
+        test.equal(mockSocket.on.callCount, 4);
+
+        test.done();
+    },
+
+    'broadcasts data unchanged back to all other socket connections': function (test) {
+        test.expect(2);
+
+        var mockIo = new MockIo(),
+            mockSocket = {
+                on: sinon.spy(),
+                broadcast: {
+                    emit: sinon.spy()
+                }
+            },
+            fauxData = {z: "a", y: "b", x: 4},
+            connectionCallback, broadcastEmitCallback;
+
+        backbone_socketio.init(mockIo);
+        connectionCallback = mockIo.sockets.on.getCall(0).args[1];
+        connectionCallback(mockSocket);
+        broadcastEmitCallback = mockSocket.on.getCall(0).args[1];
+
+        broadcastEmitCallback(fauxData);
+
+        test.deepEqual(mockSocket.broadcast.emit.getCall(0).args[1], fauxData);
+        test.equal(mockSocket.broadcast.emit.callCount, 1);
+
         test.done();
     }
 };
