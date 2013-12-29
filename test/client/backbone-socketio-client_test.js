@@ -136,7 +136,7 @@ exports['BackboneSocketio collection'] = {
         test.done();
     },
 
-    "doesn't emit a socket event if an remove event happens but triggeredBySocket option is true": function (test) {
+    "doesn't emit a socket event if a remove event happens but triggeredBySocket option is true": function (test) {
         test.expect(1);
 
         var fauxIo = new FauxIo(),
@@ -206,7 +206,7 @@ exports['BackboneSocketio collection'] = {
     },
 
     'collection is updated if matching socket remove event is fired': function (test) {
-        test.expect(1);
+        test.expect(2);
 
         var fauxIo = new FauxIo(),
             bbsio = new BackboneSocketio(fauxIo),
@@ -220,6 +220,7 @@ exports['BackboneSocketio collection'] = {
 
         col.on("remove", function (m, c, options) {
             test.equal(options.triggeredBySocket, true);
+            test.equal(col.length, 0);
             test.done();
         });
 
