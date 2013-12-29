@@ -153,6 +153,50 @@ exports['BackboneSocketio collection'] = {
         test.done();
     },
 
+    'emits a socket event whenever a sort event happens': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                comparator: function (item) {
+                    return item.get("a");
+                }
+            })),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel }),
+            m1 = new MyModel({ a: 4 });
+
+        col.add(m1, { sort: false });
+        col.sort();
+        test.deepEqual(fauxIo.emit.getCall(1).args, ["Backbone.Collection.sort", {
+            id: col.socketId
+        }]);
+
+        test.done();
+    },
+
+    "doesn't emit a socket event if a sort event happens but triggeredBySocket option is true": function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                comparator: function (item) {
+                    return item.get("a");
+                }
+            })),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel }),
+            m1 = new MyModel({ a: 45 });
+
+        col.add(m1, { sort: false });
+        col.sort({triggeredBySocket: true});
+        test.equal(fauxIo.emit.callCount, 1);
+
+        test.done();
+    },
+
     'collection is updated if matching socket add event is fired': function (test) {
         test.expect(3);
 
@@ -251,6 +295,60 @@ exports['BackboneSocketio collection'] = {
         });
 
         test.equal(removeSpy.callCount, 0);
+        test.done();
+    },
+
+    'collection is updated if matching socket sort event is fired': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                comparator: function (item) {
+                    return item.get("a");
+                }
+            })),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel }),
+            socketCallback = fauxIo.on.getCall(2).args[1],
+            m1 = new MyModel({ a: 3 });
+
+        col.add(m1, {sort: false});
+
+        col.on("sort", function (c, options) {
+            test.equal(options.triggeredBySocket, true);
+            test.done();
+        });
+
+        socketCallback({
+            id: col.socketId
+        });
+    },
+
+    'collection is not updated if non-maching socket sort event is fired': function (test) {
+        test.expect(1);
+
+        var fauxIo = new FauxIo(),
+            bbsio = new BackboneSocketio(fauxIo),
+            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                comparator: function (item) {
+                    return item.get("a");
+                }
+            })),
+            MyModel = Backbone.Model.extend(bbsio.mixins.model),
+            col = new MyCol({ model: MyModel }),
+            socketCallback = fauxIo.on.getCall(2).args[1],
+            m1 = new MyModel({ a: 37 }),
+            sortSpy = sinon.spy();
+
+        col.add(m1, {sort: false});
+        col.on("sort", sortSpy);
+
+        socketCallback({
+            id: "someRandomId1"
+        });
+
+        test.equal(sortSpy.callCount, 0);
         test.done();
     }
 };

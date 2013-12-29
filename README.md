@@ -115,7 +115,6 @@ Basic proof of concept. Full support for add and remove (collection) and change
   to ensure "add" events work correctly
 - Put server component on NPM
 - Make client component work with Bower
-- Working listener for collection `sort` events (currently stubbed)
 - Account-specific events
 - Server-side hooks to run custom code in response to change events
 - Probably a lot of other things I can't remember right now

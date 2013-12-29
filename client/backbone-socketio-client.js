@@ -79,7 +79,7 @@
                     // publish `sort` collection event to socket
                     this.on("sort", function (changedCollection, options) {
                         if (!options.triggeredBySocket) {
-                            ioSocket.emit("Backbone.Collection.sort", _.extend(_.clone(emitData), {}));
+                            ioSocket.emit("Backbone.Collection.sort", _.clone(emitData));
                         }
                     });
 
@@ -110,7 +110,9 @@
 
                     // apply `sort` socket event back to the appropriate collection
                     ioSocket.on("Backbone.Collection.sort", function (data) {
-                        console.log("socket broadcast: Backbone.Collection.sort", data);
+                        if (data.id === that.socketId) {
+                            that.sort({ triggeredBySocket: true });
+                        }
                     });
                 }
             },
