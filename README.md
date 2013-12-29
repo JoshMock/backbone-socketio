@@ -101,6 +101,11 @@ JSHint.
 
 ## Release History
 
+### 0.2.0
+
+- Support for Backbone.Collection `sort` events
+- Minor bug fixes
+
 ### 0.1.0
 
 Basic proof of concept. Full support for add and remove (collection) and change
