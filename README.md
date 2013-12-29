@@ -21,9 +21,6 @@ require('backbone-socketio').init(io);
 
 ### Client
 
-**NOTE: Client-side code is not yet finished so this is documentation *from the
-future.**
-
 The only dependencies the client has are
 [Underscore](http://documentcloud.github.io/underscore/) and
 [Backbone.js](http://documentcloud.github.io/backbone/). Using
