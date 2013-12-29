@@ -100,7 +100,11 @@ code using [Grunt](http://gruntjs.com/). `grunt` will run unit tests and
 JSHint.
 
 ## Release History
-_(Nothing yet)_
+
+### 0.1.0
+
+Basic proof of concept. Full support for add and remove (collection) and change
+(model) events.
 
 ## TODOs/wish list
 
