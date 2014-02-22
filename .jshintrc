@@ -18,6 +18,10 @@
         "define": true,
         "Backbone": true,
         "_": true,
-        "global": true
+        "global": true,
+        "describe": true,
+        "it": true,
+        "before": true,
+        "after": true
     }
 }

@@ -1,469 +1,386 @@
-'use strict';
+describe("BackboneSocketio client", function () {
+    'use strict';
 
-global.Backbone = require('backbone');
-global._ = require('underscore');
+    global._ = require('underscore');
+    global.Backbone = require('backbone');
 
-var sinon = require("sinon"),
-    BackboneSocketio = require('../../client/backbone-socketio-client.js'),
-    FauxIo = function () {
-        this.emit = sinon.spy();
-        this.on = sinon.spy();
-    };
+    var sinon = require("sinon"),
+        assert = require("assert"),
+        BackboneSocketio = require('../../client/backbone-socketio-client.js'),
+        FauxIo = function () {
+            this.emit = sinon.spy();
+            this.on = sinon.spy();
+        };
 
-/*
-  ======== A Handy Little Nodeunit Reference ========
-  https://github.com/caolan/nodeunit
+    after(function () {
+        delete global.Backbone;
+        delete global._;
+    });
 
-  Test methods:
-    test.expect(numAssertions)
-    test.done()
-  Test assertions:
-    test.ok(value, [message])
-    test.equal(actual, expected, [message])
-    test.notEqual(actual, expected, [message])
-    test.deepEqual(actual, expected, [message])
-    test.notDeepEqual(actual, expected, [message])
-    test.strictEqual(actual, expected, [message])
-    test.notStrictEqual(actual, expected, [message])
-    test.throws(block, [error], [message])
-    test.doesNotThrow(block, [error], [message])
-    test.ifError(value)
-*/
+    describe("init", function () {
+        it("should have a `mixins` property with expected keys", function () {
+            var bbsio = new BackboneSocketio({});
 
-exports['BackboneSocketio init'] = {
-    'has `mixins` property with expected keys': function (test) {
-        test.expect(3);
+            assert(_.has(bbsio, "mixins"));
+            assert(_.has(bbsio.mixins, "collection"));
+            assert(_.has(bbsio.mixins, "model"));
+        });
+    });
 
-        var bbsio = new BackboneSocketio({});
+    describe("collection", function () {
+        it('should throw an exception if applied to a non-Backbone.Collection object', function () {
+            var bbsio = new BackboneSocketio(new FauxIo()),
+                NotACollection = Backbone.Model.extend(bbsio.mixins.collection);
 
-        test.ok(_.has(bbsio, "mixins"));
-        test.ok(_.has(bbsio.mixins, "collection"));
-        test.ok(_.has(bbsio.mixins, "model"));
-        test.done();
-    }
-};
+            assert.throws(function () {
+                new NotACollection();
+            }, Error, "This object is not a Backbone.Collection");
+        });
 
-exports['BackboneSocketio collection'] = {
-    'throws exception if applied to a non-Backbone.Collection object': function (test) {
-        test.expect(1);
+        it('should create a unique socket identifier', function () {
+            var bbsio = new BackboneSocketio(new FauxIo()),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                col = new MyCol();
 
-        var bbsio = new BackboneSocketio(new FauxIo()),
-            NotACollection = Backbone.Model.extend(bbsio.mixins.collection);
+            assert(_.isString(col.socketId));
+            assert.equal(col.socketId.indexOf("socketEventCollection"), 0);
+        });
 
-        test.throws(function () {
-            new NotACollection();
-        }, Error, "This object is not a Backbone.Collection");
+        it('should emit a socket event whenever an add event happens', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel });
 
-        test.done();
-    },
+            col.add({});
+            assert(fauxIo.emit.calledWith("Backbone.Collection.add", {
+                id: col.socketId,
+                model: {},
+                modelSocketId: col.at(0).socketId,
+                index: 1
+            }));
 
-    'creates a unique socket identifier': function (test) {
-        test.expect(2);
+            col.add({something: "hey"});
+            assert(fauxIo.emit.calledWith("Backbone.Collection.add", {
+                id: col.socketId,
+                model: {something: "hey"},
+                modelSocketId: col.at(1).socketId,
+                index: 2
+            }));
 
-        var bbsio = new BackboneSocketio(new FauxIo()),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            col = new MyCol();
+            col.add([{a: 1}, {b: 2}]);
 
-        test.ok(_.isString(col.socketId));
-        test.equal(col.socketId.indexOf("socketEventCollection"), 0);
+            assert.equal(fauxIo.emit.callCount, 4);
+        });
 
-        test.done();
-    },
+        it("should not emit a socket event if an add event happens but triggeredBySocket option is true", function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                col = new MyCol({ model: Backbone.Model.extend(bbsio.mixins.model) });
 
-    'emits a socket event whenever an add event happens': function (test) {
-        test.expect(3);
+            col.add({}, {triggeredBySocket: true});
+            assert.equal(fauxIo.emit.callCount, 0);
+        });
 
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel });
+        it('should emit a socket event whenever a remove event happens', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel }),
+                m1 = new MyModel();
 
-        col.add({});
-        test.ok(fauxIo.emit.calledWith("Backbone.Collection.add", {
-            id: col.socketId,
-            model: {},
-            modelSocketId: col.at(0).socketId,
-            index: 1
-        }));
+            col.add(m1);
+            col.remove(m1);
+            assert.deepEqual(fauxIo.emit.getCall(1).args, ["Backbone.Collection.remove", {
+                id: col.socketId,
+                modelSocketId: m1.socketId
+            }]);
+        });
 
-        col.add({something: "hey"});
-        test.ok(fauxIo.emit.calledWith("Backbone.Collection.add", {
-            id: col.socketId,
-            model: {something: "hey"},
-            modelSocketId: col.at(1).socketId,
-            index: 2
-        }));
+        it("shouldn't emit a socket event if a remove event happens but triggeredBySocket option is true", function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel }),
+                m1 = new MyModel();
 
-        col.add([{a: 1}, {b: 2}]);
+            col.add(m1);
+            col.remove(m1, {triggeredBySocket: true});
+            assert.equal(fauxIo.emit.callCount, 1);
+        });
 
-        test.equal(fauxIo.emit.callCount, 4);
+        it('should emit a socket event whenever a sort event happens', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                    comparator: function (item) {
+                        return item.get("a");
+                    }
+                })),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel }),
+                m1 = new MyModel({ a: 4 });
 
-        test.done();
-    },
+            col.add(m1, { sort: false });
+            col.sort();
+            assert.deepEqual(fauxIo.emit.getCall(1).args, ["Backbone.Collection.sort", {
+                id: col.socketId
+            }]);
+        });
 
-    "doesn't emit a socket event if an add event happens but triggeredBySocket option is true": function (test) {
-        test.expect(1);
+        it("should not emit a socket event if a sort event happens but triggeredBySocket option is true", function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                    comparator: function (item) {
+                        return item.get("a");
+                    }
+                })),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel }),
+                m1 = new MyModel({ a: 45 });
 
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            col = new MyCol({ model: Backbone.Model.extend(bbsio.mixins.model) });
+            col.add(m1, { sort: false });
+            col.sort({triggeredBySocket: true});
+            assert.equal(fauxIo.emit.callCount, 1);
+        });
 
-        col.add({}, {triggeredBySocket: true});
-        test.equal(fauxIo.emit.callCount, 0);
+        it('collection is updated if matching socket add event is fired', function (done) {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({model: MyModel}),
+                // this is kind of brittle but it's the easiest way to get the socket.io callback
+                socketCallback = fauxIo.on.getCall(0).args[1],
+                m1 = new MyModel({ aThing: 37 });
 
-        test.done();
-    },
+            col.on("add", function (m, c, options) {
+                assert.equal(options.triggeredBySocket, true);
+                assert.equal(options.at, 1);
+                assert.equal(m.get("aThing"), 37);
+                done();
+            });
 
-    'emits a socket event whenever a remove event happens': function (test) {
-        test.expect(1);
+            socketCallback({
+                id: col.socketId,
+                model: m1.toJSON(),
+                modelSocketId: m1.socketId,
+                index: 1
+            });
+        });
 
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel }),
-            m1 = new MyModel();
+        it('should not update the collection if non-maching socket add event is fired', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({model: MyModel}),
+                socketCallback = fauxIo.on.getCall(0).args[1],
+                m1 = new MyModel({ aThing: 37 }),
+                addSpy = sinon.spy();
 
-        col.add(m1);
-        col.remove(m1);
-        test.deepEqual(fauxIo.emit.getCall(1).args, ["Backbone.Collection.remove", {
-            id: col.socketId,
-            modelSocketId: m1.socketId
-        }]);
+            col.on("add", addSpy);
 
-        test.done();
-    },
+            socketCallback({
+                id: "someRandomId1",
+                model: m1.toJSON(),
+                modelSocketId: m1.socketId,
+                index: 1
+            });
 
-    "doesn't emit a socket event if a remove event happens but triggeredBySocket option is true": function (test) {
-        test.expect(1);
+            assert.equal(addSpy.callCount, 0);
+        });
 
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel }),
-            m1 = new MyModel();
+        it('should update the collection if matching socket remove event is fired', function (done) {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({model: MyModel}),
+                socketCallback = fauxIo.on.getCall(1).args[1],
+                m1 = new MyModel();
 
-        col.add(m1);
-        col.remove(m1, {triggeredBySocket: true});
-        test.equal(fauxIo.emit.callCount, 1);
+            col.add(m1);
 
-        test.done();
-    },
+            col.on("remove", function (m, c, options) {
+                assert.equal(options.triggeredBySocket, true);
+                done();
+            });
 
-    'emits a socket event whenever a sort event happens': function (test) {
-        test.expect(1);
+            socketCallback({
+                id: col.socketId,
+                modelSocketId: m1.socketId
+            });
+        });
 
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
-                comparator: function (item) {
-                    return item.get("a");
+        it('should not update the collection if non-maching socket remove event is fired', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({model: MyModel}),
+                socketCallback = fauxIo.on.getCall(1).args[1],
+                m1 = new MyModel({ aThing: 37 }),
+                removeSpy = sinon.spy();
+
+            col.add(m1);
+            col.on("remove", removeSpy);
+
+            socketCallback({
+                id: "someRandomId1",
+                modelSocketId: m1.socketId
+            });
+
+            assert.equal(removeSpy.callCount, 0);
+        });
+
+        it('should not update the collection if matching socket sort event is fired', function (done) {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                    comparator: function (item) {
+                        return item.get("a");
+                    }
+                })),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel }),
+                socketCallback = fauxIo.on.getCall(2).args[1],
+                m1 = new MyModel({ a: 3 });
+
+            col.add(m1, {sort: false});
+
+            col.on("sort", function (c, options) {
+                assert.equal(options.triggeredBySocket, true);
+                done();
+            });
+
+            socketCallback({
+                id: col.socketId
+            });
+        });
+
+        it('collection is not updated if non-maching socket sort event is fired', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
+                    comparator: function (item) {
+                        return item.get("a");
+                    }
+                })),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                col = new MyCol({ model: MyModel }),
+                socketCallback = fauxIo.on.getCall(2).args[1],
+                m1 = new MyModel({ a: 37 }),
+                sortSpy = sinon.spy();
+
+            col.add(m1, {sort: false});
+            col.on("sort", sortSpy);
+
+            socketCallback({
+                id: "someRandomId1"
+            });
+
+            assert.equal(sortSpy.callCount, 0);
+        });
+    });
+
+    describe("model", function () {
+        it('should throw an exception if applied to a non-Backbone.Model object', function () {
+            var bbsio = new BackboneSocketio(new FauxIo()),
+                NotAModel = Backbone.Collection.extend(bbsio.mixins.model);
+
+            assert.throws(function () {
+                var m = new NotAModel();
+                m.set("x", 1);
+            }, Error, "This object is not a Backbone.Model");
+        });
+
+        it('should create a unique socket identifier', function () {
+            var bbsio = new BackboneSocketio(new FauxIo()),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                model = new MyModel();
+
+            assert(_.isString(model.socketId));
+            assert.equal(model.socketId.indexOf("socketEventModel"), 0);
+        });
+
+        it('should emit a socket event whenever a change is made to the model', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                model = new MyModel();
+
+            model.set("something", "something else");
+            assert(fauxIo.emit.calledOnce);
+            assert(fauxIo.emit.calledWith("Backbone.Model.change", {
+                id: model.socketId,
+                updates: {
+                    "something": "something else"
                 }
-            })),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel }),
-            m1 = new MyModel({ a: 4 });
+            }));
 
-        col.add(m1, { sort: false });
-        col.sort();
-        test.deepEqual(fauxIo.emit.getCall(1).args, ["Backbone.Collection.sort", {
-            id: col.socketId
-        }]);
-
-        test.done();
-    },
-
-    "doesn't emit a socket event if a sort event happens but triggeredBySocket option is true": function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
-                comparator: function (item) {
-                    return item.get("a");
+            model.set("anotherThing", 22);
+            assert.equal(fauxIo.emit.callCount, 2);
+            assert(fauxIo.emit.calledWith("Backbone.Model.change", {
+                id: model.socketId,
+                updates: {
+                    "something": "something else",
+                    "anotherThing": 22
                 }
-            })),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel }),
-            m1 = new MyModel({ a: 45 });
-
-        col.add(m1, { sort: false });
-        col.sort({triggeredBySocket: true});
-        test.equal(fauxIo.emit.callCount, 1);
-
-        test.done();
-    },
-
-    'collection is updated if matching socket add event is fired': function (test) {
-        test.expect(3);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({model: MyModel}),
-            // this is kind of brittle but it's the easiest way to get the socket.io callback
-            socketCallback = fauxIo.on.getCall(0).args[1],
-            m1 = new MyModel({ aThing: 37 });
-
-        col.on("add", function (m, c, options) {
-            test.equal(options.triggeredBySocket, true);
-            test.equal(options.at, 1);
-            test.equal(m.get("aThing"), 37);
-            test.done();
+            }));
         });
 
-        socketCallback({
-            id: col.socketId,
-            model: m1.toJSON(),
-            modelSocketId: m1.socketId,
-            index: 1
-        });
-    },
+        it('should not emit a socket event if a change was triggered by a socket event', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                model = new MyModel();
 
-    'collection is not updated if non-maching socket add event is fired': function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({model: MyModel}),
-            socketCallback = fauxIo.on.getCall(0).args[1],
-            m1 = new MyModel({ aThing: 37 }),
-            addSpy = sinon.spy();
-
-        col.on("add", addSpy);
-
-        socketCallback({
-            id: "someRandomId1",
-            model: m1.toJSON(),
-            modelSocketId: m1.socketId,
-            index: 1
+            model.set("something", "something else", {
+                triggeredBySocket: true
+            });
+            assert.equal(fauxIo.emit.callCount, 0);
         });
 
-        test.equal(addSpy.callCount, 0);
-        test.done();
-    },
+        it('should update the model if matching socket change event is fired', function (done) {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                model = new MyModel(),
+                socketCallback = fauxIo.on.getCall(0).args[1];
 
-    'collection is updated if matching socket remove event is fired': function (test) {
-        test.expect(1);
+            model.on("change", function (m, options) {
+                assert.equal(options.triggeredBySocket, true);
+                assert.equal(model.get("myThing"), 1);
+                done();
+            });
 
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({model: MyModel}),
-            socketCallback = fauxIo.on.getCall(1).args[1],
-            m1 = new MyModel();
-
-        col.add(m1);
-
-        col.on("remove", function (m, c, options) {
-            test.equal(options.triggeredBySocket, true);
-            test.done();
+            socketCallback({
+                id: model.socketId,
+                updates: { "myThing": 1 }
+            });
         });
 
-        socketCallback({
-            id: col.socketId,
-            modelSocketId: m1.socketId
+        it('should not update the model if non-matching socket change event is fired', function () {
+            var fauxIo = new FauxIo(),
+                bbsio = new BackboneSocketio(fauxIo),
+                MyModel = Backbone.Model.extend(bbsio.mixins.model),
+                model = new MyModel(),
+                socketCallback = fauxIo.on.getCall(0).args[1],
+                changeSpy = sinon.spy();
+
+            model.on("change", changeSpy);
+            socketCallback({
+                id: "someRandomId1",
+                updates: { "myOtherThing": 2 }
+            });
+
+            assert.equal(changeSpy.callCount, 0);
         });
-    },
-
-    'collection is not updated if non-maching socket remove event is fired': function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(bbsio.mixins.collection),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({model: MyModel}),
-            socketCallback = fauxIo.on.getCall(1).args[1],
-            m1 = new MyModel({ aThing: 37 }),
-            removeSpy = sinon.spy();
-
-        col.add(m1);
-        col.on("remove", removeSpy);
-
-        socketCallback({
-            id: "someRandomId1",
-            modelSocketId: m1.socketId
-        });
-
-        test.equal(removeSpy.callCount, 0);
-        test.done();
-    },
-
-    'collection is updated if matching socket sort event is fired': function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
-                comparator: function (item) {
-                    return item.get("a");
-                }
-            })),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel }),
-            socketCallback = fauxIo.on.getCall(2).args[1],
-            m1 = new MyModel({ a: 3 });
-
-        col.add(m1, {sort: false});
-
-        col.on("sort", function (c, options) {
-            test.equal(options.triggeredBySocket, true);
-            test.done();
-        });
-
-        socketCallback({
-            id: col.socketId
-        });
-    },
-
-    'collection is not updated if non-maching socket sort event is fired': function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyCol = Backbone.Collection.extend(_.extend(bbsio.mixins.collection, {
-                comparator: function (item) {
-                    return item.get("a");
-                }
-            })),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            col = new MyCol({ model: MyModel }),
-            socketCallback = fauxIo.on.getCall(2).args[1],
-            m1 = new MyModel({ a: 37 }),
-            sortSpy = sinon.spy();
-
-        col.add(m1, {sort: false});
-        col.on("sort", sortSpy);
-
-        socketCallback({
-            id: "someRandomId1"
-        });
-
-        test.equal(sortSpy.callCount, 0);
-        test.done();
-    }
-};
-
-exports['BackboneSocketio model'] = {
-    'throws exception if applied to a non-Backbone.Model object': function (test) {
-        test.expect(1);
-
-        var bbsio = new BackboneSocketio(new FauxIo()),
-            NotAModel = Backbone.Collection.extend(bbsio.mixins.model);
-
-        test.throws(function () {
-            var m = new NotAModel();
-            m.set("x", 1);
-        }, Error, "This object is not a Backbone.Model");
-
-        test.done();
-    },
-
-    'creates a unique socket identifier': function (test) {
-        test.expect(2);
-
-        var bbsio = new BackboneSocketio(new FauxIo()),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            model = new MyModel();
-
-        test.ok(_.isString(model.socketId));
-        test.equal(model.socketId.indexOf("socketEventModel"), 0);
-
-        test.done();
-    },
-
-    'emits a socket event whenever a change is made to the model': function (test) {
-        test.expect(4);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            model = new MyModel();
-
-        model.set("something", "something else");
-        test.ok(fauxIo.emit.calledOnce);
-        test.ok(fauxIo.emit.calledWith("Backbone.Model.change", {
-            id: model.socketId,
-            updates: {
-                "something": "something else"
-            }
-        }));
-
-        model.set("anotherThing", 22);
-        test.equal(fauxIo.emit.callCount, 2);
-        test.ok(fauxIo.emit.calledWith("Backbone.Model.change", {
-            id: model.socketId,
-            updates: {
-                "something": "something else",
-                "anotherThing": 22
-            }
-        }));
-
-        test.done();
-    },
-
-    'does not emit a socket event if a change was triggered by a socket event': function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            model = new MyModel();
-
-        model.set("something", "something else", {
-            triggeredBySocket: true
-        });
-        test.equal(fauxIo.emit.callCount, 0);
-
-        test.done();
-    },
-
-    'model is updated if matching socket change event is fired': function (test) {
-        test.expect(2);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            model = new MyModel(),
-            socketCallback = fauxIo.on.getCall(0).args[1];
-
-        model.on("change", function (m, options) {
-            test.equal(options.triggeredBySocket, true);
-            test.equal(model.get("myThing"), 1);
-            test.done();
-        });
-
-        socketCallback({
-            id: model.socketId,
-            updates: { "myThing": 1 }
-        });
-    },
-
-    'model is not updated if non-matching socket change event is fired': function (test) {
-        test.expect(1);
-
-        var fauxIo = new FauxIo(),
-            bbsio = new BackboneSocketio(fauxIo),
-            MyModel = Backbone.Model.extend(bbsio.mixins.model),
-            model = new MyModel(),
-            socketCallback = fauxIo.on.getCall(0).args[1],
-            changeSpy = sinon.spy();
-
-        model.on("change", changeSpy);
-        socketCallback({
-            id: "someRandomId1",
-            updates: { "myOtherThing": 2 }
-        });
-
-        test.equal(changeSpy.callCount, 0);
-        test.done();
-    }
-};
+    });
+});

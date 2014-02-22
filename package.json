@@ -26,20 +26,23 @@
     "node": ">= 0.8.0"
   },
   "scripts": {
-    "test": "grunt nodeunit"
+    "test": "grunt mochaTest:test"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.6.3",
-    "grunt-contrib-nodeunit": "~0.2.0",
     "grunt-contrib-watch": "~0.5.3",
     "grunt": "~0.4.1",
     "backbone": "~1.1.0",
     "underscore": "~1.5.2",
-    "sinon": "~1.7.3"
+    "sinon": "~1.7.3",
+    "mocha": "~1.17.1",
+    "grunt-mocha-test": "~0.9.0",
+    "requirejs": "~2.1.11"
   },
   "keywords": [
     "backbone",
     "socketio",
-    "websockets"
+    "websockets",
+    "realtime"
   ]
 }
