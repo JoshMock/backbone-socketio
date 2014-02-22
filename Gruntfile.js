@@ -19,7 +19,10 @@ module.exports = function(grunt) {
             },
             client: {
                 jshintrc: 'client/.jshintrc',
-                src: ['client/**/*.js']
+                src: [
+                    'client/**/*.js',
+                    '!client/backbone-socketio.min.js'
+                ]
             },
             test: {
                 src: ['test/**/*.js']
