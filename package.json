@@ -21,7 +21,7 @@
       "url": "https://github.com/JoshMock/backbone-socketio/blob/master/LICENSE-MIT"
     }
   ],
-  "main": "lib/backbone-socketio",
+  "main": "src/backbone-socketio",
   "engines": {
     "node": ">= 0.8.0"
   },

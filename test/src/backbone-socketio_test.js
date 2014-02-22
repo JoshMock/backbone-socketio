@@ -1,7 +1,7 @@
 'use strict';
 
 var sinon = require("sinon"),
-    backbone_socketio = require('../../lib/backbone-socketio.js'),
+    backbone_socketio = require('../../src/backbone-socketio.js'),
     MockIo = function () {
         this.sockets = {
             on: sinon.spy()
