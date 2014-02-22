@@ -34,7 +34,7 @@ Install the client-side code using [Bower](http://bower.io/):
 or by [downloading the minified file](https://github.com/JoshMock/backbone-socketio/blob/master/client/backbone-socketio.min.js) and hosting it on your server or CDN.
 
 Include the file:
-`<script src="/bower_components/backbone-socketio/client/backbone-socketio.js"></script>`
+`<script src="/bower_components/backbone-socketio/client/backbone-socketio.min.js"></script>`
 
 And mix the event listeners in using
 [Cocktail](https://github.com/onsi/cocktail), or manually with `extend`.
