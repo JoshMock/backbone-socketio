@@ -31,8 +31,7 @@ Install the client-side code using [Bower](http://bower.io/):
 
 `bower install backbone-socketio` (TODO: package not Bower-ready yet)
 
-or by [downloading the minified file](#) and hosting it on your server or CDN.
-(TODO: no minified file yet)
+or by [downloading the minified file](https://github.com/JoshMock/backbone-socketio/blob/master/client/backbone-socketio.min.js) and hosting it on your server or CDN.
 
 Include the file:
 `<script src="/bower_components/backbone-socketio/client/backbone-socketio.js"></script>`
@@ -110,7 +109,6 @@ Basic proof of concept. Full support for add and remove (collection) and change
 
 ## TODOs/wish list
 
-- Need minified version of client-side code
 - Only publish changed model data over socket rather than entire JSON
   representation
 - Collection validates that its model type is extended with backbone-socketio

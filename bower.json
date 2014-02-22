@@ -13,7 +13,8 @@
   "keywords": [
     "backbone",
     "socketio",
-    "websockets"
+    "websockets",
+    "realtime"
   ],
   "license": "MIT",
   "ignore": [

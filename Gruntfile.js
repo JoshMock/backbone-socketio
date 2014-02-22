@@ -1,7 +1,6 @@
 'use strict';
 
 module.exports = function(grunt) {
-
     grunt.initConfig({
         mochaTest: {
             test: {
@@ -26,6 +25,17 @@ module.exports = function(grunt) {
                 src: ['test/**/*.js']
             },
         },
+        uglify: {
+            options: {
+                sourceMap: true,
+                preserveComments: 'some'
+            },
+            my_target: {
+                files: {
+                    "client/backbone-socketio.min.js": ["client/backbone-socketio-client.js"]
+                }
+            }
+        },
         watch: {
             gruntfile: {
                 files: '<%= jshint.gruntfile.src %>',
@@ -37,7 +47,7 @@ module.exports = function(grunt) {
             },
             client: {
                 files: '<%= jshint.client.src %>',
-                tasks: ['jshint:client', 'mochaTest:test']
+                tasks: ['jshint:client', 'mochaTest:test', 'uglify']
             },
             test: {
                 files: '<%= jshint.test.src %>',
@@ -50,7 +60,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'mochaTest:test']);
+    grunt.registerTask('default', ['jshint', 'mochaTest:test', 'uglify']);
 };

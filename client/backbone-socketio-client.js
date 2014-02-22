@@ -1,3 +1,7 @@
+/** @license
+ * backbone-socketio 0.2.0
+ * (c) 2013-2014 Josh Mock
+ * This may be freely distributed under the MIT license. */
 (function (global, Backbone, _) {
     "use strict";
 
