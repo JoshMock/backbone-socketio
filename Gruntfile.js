@@ -50,7 +50,7 @@ module.exports = function(grunt) {
             },
             client: {
                 files: '<%= jshint.client.src %>',
-                tasks: ['jshint:client', 'mochaTest:test', 'uglify']
+                tasks: ['jshint:client', 'uglify', 'mochaTest:test']
             },
             test: {
                 files: '<%= jshint.test.src %>',
@@ -66,5 +66,5 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
 
     // Default task.
-    grunt.registerTask('default', ['jshint', 'mochaTest:test', 'uglify']);
+    grunt.registerTask('default', ['jshint', 'uglify', 'mochaTest:test']);
 };

@@ -6,7 +6,7 @@ describe("BackboneSocketio client", function () {
 
     var sinon = require("sinon"),
         assert = require("assert"),
-        BackboneSocketio = require('../../client/backbone-socketio-client.js'),
+        BackboneSocketio = require('../../client/backbone-socketio.min.js'),
         FauxIo = function () {
             this.emit = sinon.spy();
             this.on = sinon.spy();
