@@ -109,8 +109,6 @@ Basic proof of concept. Full support for add and remove (collection) and change
 
 ## TODOs/wish list
 
-- Only publish changed model data over socket rather than entire JSON
-  representation
 - Collection validates that its model type is extended with backbone-socketio
   to ensure "add" events work correctly
 - Put server component on NPM
@@ -120,6 +118,6 @@ Basic proof of concept. Full support for add and remove (collection) and change
 - Probably a lot of other things I can't remember right now
 
 ## License
-Copyright (c) 2013 Josh Mock
+Copyright (c) 2013-2014 Josh Mock
 
 Licensed under the MIT license.

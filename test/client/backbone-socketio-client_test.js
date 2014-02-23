@@ -309,7 +309,7 @@ describe("BackboneSocketio client", function () {
             assert.equal(model.socketId.indexOf("socketEventModel"), 0);
         });
 
-        it('should emit a socket event whenever a change is made to the model', function () {
+        it('should emit a socket event whenever a change is made to the model, with only changed data', function () {
             var fauxIo = new FauxIo(),
                 bbsio = new BackboneSocketio(fauxIo),
                 MyModel = Backbone.Model.extend(bbsio.mixins.model),
@@ -329,7 +329,6 @@ describe("BackboneSocketio client", function () {
             assert(fauxIo.emit.calledWith("Backbone.Model.change", {
                 id: model.socketId,
                 updates: {
-                    "something": "something else",
                     "anotherThing": 22
                 }
             }));

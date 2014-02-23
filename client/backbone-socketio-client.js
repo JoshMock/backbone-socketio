@@ -139,7 +139,7 @@
                         if (!options.triggeredBySocket) {
                             ioSocket.emit("Backbone.Model.change", {
                                 id: that.socketId,
-                                updates: that.toJSON()
+                                updates: that.changed
                             });
                         }
                     });
