@@ -121,3 +121,7 @@ Basic proof of concept. Full support for add and remove (collection) and change
 Copyright (c) 2013-2014 Josh Mock
 
 Licensed under the MIT license.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/JoshMock/backbone-socketio/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
