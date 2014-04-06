@@ -97,6 +97,14 @@ JSHint.
 
 ## Release History
 
+### 0.2.1
+
+- Added minified version of client file with source map file
+- Only a model's changed data is sent over socket rather than entire model's
+  JSON
+- Reorganized file structure
+- Rewrote unit tests using Mocha
+
 ### 0.2.0
 
 - Support for Backbone.Collection `sort` events

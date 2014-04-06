@@ -1,7 +1,7 @@
 {
   "name": "backbone-socketio",
   "description": "Realtime two-way data-binding of Backbone model and collection data to a webserver via Socket.io.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "homepage": "https://github.com/JoshMock/backbone-socketio",
   "author": {
     "name": "Josh Mock",
