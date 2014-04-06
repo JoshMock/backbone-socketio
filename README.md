@@ -7,8 +7,7 @@ editing in Backbone applications (hopefully) much simpler.
 ## Getting Started
 
 ### Server
-Install the module: `npm install backbone-socketio`. (TODO: package not on NPM
-yet)
+Install the module: `npm install backbone-socketio`.
 
 Server-side event listeners are added by injecting the Socket.io module as a
 dependency:
@@ -29,7 +28,7 @@ collections will make for a much nicer experience, but is not required.
 
 Install the client-side code using [Bower](http://bower.io/):
 
-`bower install backbone-socketio` (TODO: package not Bower-ready yet)
+`bower install backbone-socketio`
 
 or by [downloading the minified file](https://github.com/JoshMock/backbone-socketio/blob/master/client/backbone-socketio.min.js) and hosting it on your server or CDN.
 
