@@ -1,4 +1,4 @@
-# backbone-socketio [![Build Status](https://secure.travis-ci.org/JoshMock/backbone-socketio.png?branch=master)](http://travis-ci.org/JoshMock/backbone-socketio) [![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
+# backbone-socketio [![Build Status](https://secure.travis-ci.org/JoshMock/backbone-socketio.png?branch=master)](http://travis-ci.org/JoshMock/backbone-socketio)
 
 Realtime two-way data-binding of Backbone model and collection data to a
 webserver via [Socket.io](http://socket.io). Makes realtime, collaborative
@@ -109,11 +109,9 @@ Basic proof of concept. Full support for add and remove (collection) and change
 
 ## TODOs/wish list
 
-- Collection validates that its model type is extended with backbone-socketio
-  to ensure "add" events work correctly
 - Put server component on NPM
 - Make client component work with Bower
-- Account-specific events
+- Account/room-specific events
 - Server-side hooks to run custom code in response to change events
 - Probably a lot of other things I can't remember right now
 
