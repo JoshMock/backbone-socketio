@@ -2,8 +2,10 @@
  * backbone-socketio 0.2.1
  * (c) 2013-2014 Josh Mock
  * This may be freely distributed under the MIT license. */
-(function (global, Backbone, _) {
+(function () {
     "use strict";
+
+    var defineBackboneSocketio = function(global, Backbone, _) {
 
     // ## initialization function
     //
@@ -155,14 +157,20 @@
         };
     };
 
+    return BackboneSocketio;
+    };
+
     // module definition setup
+    var g = this;
     if (typeof define === 'function' && define.amd) {
-        define([], function () {
-            return BackboneSocketio;
+        define(["backbone", "underscore"], function (Backbone, _) {
+            return defineBackboneSocketio(g, Backbone, _)
         });
     } else if (typeof module !== 'undefined' && module.exports) {
-        module.exports = BackboneSocketio;
+        var Backbone = require("backbone");
+        var _ = require("underscore");
+        module.exports = defineBackboneSocketio(g, Backbone, _);
     } else {
-        global.BackboneSocketio = BackboneSocketio;
+        b.BackboneSocketio = defineBackboneSocketio(g, g.Backbone, g._);
     }
-})(this, Backbone, _);
+})();
