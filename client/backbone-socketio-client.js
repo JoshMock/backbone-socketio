@@ -53,7 +53,7 @@
                     /[xy]/g,
                     function(c) {
                         var r = Math.random() * 16|0;
-                        if (c == 'y') {
+                        if (c === 'y') {
                             r = r & 0x3 | 0x8;
                         }
                         return r.toString(16);
@@ -158,8 +158,8 @@
 
                         // apply socket events to appropriate model
                         ioSocket.on("Backbone.Model.change", function (data) {
-                            if (   (that.id !== undefined && data.id === that.id)
-                                || (that.id === undefined && data.cid === that.cid)) {
+                            if ((that.id !== undefined && data.id === that.id) ||
+                                (that.id === undefined && data.cid === that.cid)) {
                                 that.set(data.updates, { triggeredBySocket: true });
                             }
                         });

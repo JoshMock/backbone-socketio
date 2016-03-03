@@ -16,7 +16,7 @@ describe("BackboneSocketio server", function () {
 
     it('should not throws an error when the socket.io is passed', function () {
         assert.doesNotThrow(function () {
-            backbone_socketio.init(new MockIo());
+            backbone_socketio.init(new MockIo().sockets);
         }, Error, "Expected one argument; received zero");
     });
 
@@ -25,7 +25,7 @@ describe("BackboneSocketio server", function () {
             mockSocket = { on: sinon.spy() },
             connectionCallback;
 
-        backbone_socketio.init(mockIo);
+        backbone_socketio.init(mockIo.sockets);
         assert.equal(mockIo.sockets.on.getCall(0).args[0], 'connection');
         connectionCallback = mockIo.sockets.on.getCall(0).args[1];
         connectionCallback(mockSocket);
@@ -48,7 +48,7 @@ describe("BackboneSocketio server", function () {
             fauxData = {z: "a", y: "b", x: 4},
             connectionCallback, broadcastEmitCallback;
 
-        backbone_socketio.init(mockIo);
+        backbone_socketio.init(mockIo.sockets);
         connectionCallback = mockIo.sockets.on.getCall(0).args[1];
         connectionCallback(mockSocket);
         broadcastEmitCallback = mockSocket.on.getCall(0).args[1];
