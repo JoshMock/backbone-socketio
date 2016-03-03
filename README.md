@@ -108,10 +108,9 @@ var BackboneSocketio = require("backbone-socketio/client/backbone-socketio-clien
 var BackboneSocketioServer = require("backbone-socketio/src/backbone-socketio");
 var io = require('socket.io');
 
-var socket = io.connect('http://localhost:3000'),
-BackboneSocketioServer.init(socket.sockets);
+BackboneSocketioServer.init(io.sockets);
 
-var backboneMixins = new BackboneSocketio(socket.sockets);
+var backboneMixins = new BackboneSocketio(io.sockets);
 var SocketModel = Backbone.Model.extend(backboneMixins.mixins.model);
 var SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection);
 
