@@ -47,6 +47,19 @@
         //         }
         //     });
         var BackboneSocketio = function (ioSocket) {
+            var backboneSocket = this;
+            this.generateUuid4 = function() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+                    /[xy]/g,
+                    function(c) {
+                        var r = Math.random() * 16|0;
+                        if (c == 'y') {
+                            r = r & 0x3 | 0x8;
+                        }
+                        return r.toString(16);
+                    }
+                );
+            };
             this.mixins = {
                 collection: {
                     initialize: function () {
@@ -129,18 +142,15 @@
                             throw new Error("This object is not a Backbone.Model");
                         }
 
-                        var uniqueSocketId = _.uniqueId("socketEventModel"),
-                            that = this;
-
-                        // give the socket a unique ID so we can make sure events
-                        // only are applied to the correct collection(s)
-                        this.socketId = uniqueSocketId;
+                        var that = this;
+                        that.cid = backboneSocket.generateUuid4();
 
                         // publish model `change` events to socket
                         this.on("change", function (changedModel, options) {
                             if (!options.triggeredBySocket) {
                                 ioSocket.emit("Backbone.Model.change", {
-                                    id: that.socketId,
+                                    id: that.id,
+                                    cid: that.cid,
                                     updates: that.changed
                                 });
                             }
@@ -148,7 +158,8 @@
 
                         // apply socket events to appropriate model
                         ioSocket.on("Backbone.Model.change", function (data) {
-                            if (data.id === that.socketId) {
+                            if (   (that.id !== undefined && data.id === that.id)
+                                || (that.id === undefined && data.cid === that.cid)) {
                                 that.set(data.updates, { triggeredBySocket: true });
                             }
                         });
