@@ -60,66 +60,79 @@
                     }
                 );
             };
+            this.matchObjectIds = function (a, b) {
+                return ((a.id !== undefined && b.id === a.id) ||
+                        (a.id === undefined && b.cid === a.cid));
+            };
             this.mixins = {
                 collection: {
+                    constructor: function (models, options) {
+                      Backbone.Collection.call(this, models, options);
+                      this.id = options.id;
+                    },
                     initialize: function () {
                         if (!(this instanceof Backbone.Collection)) {
                             throw new Error("This object is not a Backbone.Collection");
                         }
 
-                        var uniqueSocketId = _.uniqueId("socketEventCollection"),
-                            emitData = { id: uniqueSocketId },
-                            that = this;
+                        var that = this;
 
-                        // give the socket a unique ID so we can make sure events
+                        // give the collection globally a unique ID so we can make sure events
                         // only are applied to the correct collection(s)
-                        this.socketId = uniqueSocketId;
+                        that.cid = backboneSocket.generateUuid4();
 
                         // publish `add` collection event to socket
                         this.on("add", function (model, changedCollection, options) {
                             if (!options.triggeredBySocket) {
-                                ioSocket.emit("Backbone.Collection.add", _.extend(_.clone(emitData), {
-                                    model: model.toJSON(),
-                                    modelSocketId: model.socketId,
+                                var modelData = model.toJSON();
+                                modelData.cid = model.cid;
+                                ioSocket.emit("Backbone.Collection.add", {
+                                    id: that.id,
+                                    cid: that.cid,
+                                    model: modelData,
                                     index: changedCollection.models.indexOf(model)
-                                }));
+                                });
                             }
                         });
 
                         // publish `remove` collection event to socket
                         this.on("remove", function (model, changedCollection, options) {
                             if (!options.triggeredBySocket) {
-                                ioSocket.emit("Backbone.Collection.remove", _.extend(_.clone(emitData), {
-                                    modelSocketId: model.socketId
-                                }));
+                                ioSocket.emit("Backbone.Collection.remove", {
+                                    id: that.id,
+                                    cid: that.cid,
+                                    model: {cid: model.cid, id: mode.id}
+                                });
                             }
                         });
 
                         // publish `sort` collection event to socket
                         this.on("sort", function (changedCollection, options) {
                             if (!options.triggeredBySocket) {
-                                ioSocket.emit("Backbone.Collection.sort", _.clone(emitData));
+                                ioSocket.emit("Backbone.Collection.sort", {
+                                    id: that.id,
+                                    cid: that.cid
+                                });
                             }
                         });
 
                         // apply `add` socket event back to the appropriate collection
                         ioSocket.on("Backbone.Collection.add", function (data) {
-                            if (data.id === that.socketId) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
                                 that.add(data.model, {
                                     at: data.index,
                                     triggeredBySocket: true
                                 });
-                                that.at(data.index).socketId = data.modelSocketId;
                             }
                         });
 
                         // apply `remove` socket event back to the appropriate collection
                         ioSocket.on("Backbone.Collection.remove", function (data) {
-                            if (data.id === that.socketId) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
                                 var modelToRemove;
 
                                 that.each(function (model) {
-                                    if (model.socketId === data.modelSocketId) {
+                                    if (backboneSocket.matchObjectIds(model, data.model)) {
                                         modelToRemove = model;
                                     }
                                 });
@@ -129,7 +142,7 @@
 
                         // apply `sort` socket event back to the appropriate collection
                         ioSocket.on("Backbone.Collection.sort", function (data) {
-                            if (data.id === that.socketId) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
                                 that.sort({ triggeredBySocket: true });
                             }
                         });
@@ -143,6 +156,9 @@
                         }
 
                         var that = this;
+
+                        // give the model a globally unique ID so we can make sure events
+                        // only are applied to the correct collection(s)
                         that.cid = backboneSocket.generateUuid4();
 
                         // publish model `change` events to socket
@@ -158,8 +174,7 @@
 
                         // apply socket events to appropriate model
                         ioSocket.on("Backbone.Model.change", function (data) {
-                            if ((that.id !== undefined && data.id === that.id) ||
-                                (that.id === undefined && data.cid === that.cid)) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
                                 that.set(data.updates, { triggeredBySocket: true });
                             }
                         });
