@@ -14,9 +14,15 @@ dependency:
 
 ```javascript
 var io = require('socket.io');
-require('backbone-socketio').init(io);
+require('backbone-socketio').init(io.sockets);
+
+// Alternatively to use a specific socket.io namespace:
+// require('backbone-socketio').init(io.sockets.of("/namespace"));
+
 // continue to do your normal socket.io stuff here
 ```
+
+
 
 ### Client
 
@@ -87,6 +93,46 @@ socket and update the data in their corresponding models and collections.
 
 Handling any DOM manipulation necessary to reflect changes in your views is up
 to you.
+
+
+### Using the client library on the server
+
+It's often usefull to have access to the same backbone models on the
+server side as on the client side, with the same interfaces and data.
+
+Install the module Backbone: `npm install backbone`.
+
+```javascript
+var Backbone = require("backbone");
+var BackboneSocketio = require("backbone-socketio/client/backbone-socketio-client");
+var BackboneSocketioServer = require("backbone-socketio/src/backbone-socketio");
+var io = require('socket.io');
+
+BackboneSocketioServer.init(io.sockets);
+
+var backboneMixins = new BackboneSocketio(io.sockets);
+var SocketModel = Backbone.Model.extend(backboneMixins.mixins.model);
+var SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection);
+
+MyModel = SocketModel.extend({
+    // normal model init code here
+    initialize: function () {
+        // if you need an initialize method make sure you call the parent's
+        // initialize function
+        MyModel.__super__.initialize.call(this);
+    }
+});
+
+MyCollection = SocketCollection.extend({
+    // normal collection init code here
+    initialize: function () {
+        // if you need an initialize method make sure you call the parent's
+        // initialize function
+        MyCollection.__super__.initialize.call(this);
+    }
+});
+```
+
 
 ## Contributing
 In lieu of a formal styleguide, take care to maintain the existing coding

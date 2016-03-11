@@ -305,8 +305,7 @@ describe("BackboneSocketio client", function () {
                 MyModel = Backbone.Model.extend(bbsio.mixins.model),
                 model = new MyModel();
 
-            assert(_.isString(model.socketId));
-            assert.equal(model.socketId.indexOf("socketEventModel"), 0);
+            assert(_.isString(model.cid));
         });
 
         it('should emit a socket event whenever a change is made to the model, with only changed data', function () {
@@ -318,7 +317,8 @@ describe("BackboneSocketio client", function () {
             model.set("something", "something else");
             assert(fauxIo.emit.calledOnce);
             assert(fauxIo.emit.calledWith("Backbone.Model.change", {
-                id: model.socketId,
+                id: model.id,
+                cid: model.cid,
                 updates: {
                     "something": "something else"
                 }
@@ -327,7 +327,8 @@ describe("BackboneSocketio client", function () {
             model.set("anotherThing", 22);
             assert.equal(fauxIo.emit.callCount, 2);
             assert(fauxIo.emit.calledWith("Backbone.Model.change", {
-                id: model.socketId,
+                id: model.id,
+                cid: model.cid,
                 updates: {
                     "anotherThing": 22
                 }
@@ -360,7 +361,8 @@ describe("BackboneSocketio client", function () {
             });
 
             socketCallback({
-                id: model.socketId,
+                id: model.id,
+                cid: model.cid,
                 updates: { "myThing": 1 }
             });
         });

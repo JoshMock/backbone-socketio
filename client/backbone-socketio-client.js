@@ -2,167 +2,201 @@
  * backbone-socketio 0.2.1
  * (c) 2013-2014 Josh Mock
  * This may be freely distributed under the MIT license. */
-(function (global, Backbone, _) {
+(function () {
     "use strict";
 
-    // ## initialization function
-    //
-    // usage (with [Cocktail](https://github.com/onsi/cocktail)):
-    //
-    //     var socket = io.connect('http://localhost:3000'),
-    //         backboneMixins = new BackboneSocketio(socket),
-    //         MyModel, MyCollection;
-    //     
-    //     MyModel = Backbone.Model.extend({ /* normal model init code here */ });
-    //     Cocktail.mixin(MyModel, backboneMixins.mixins.model);
-    //     
-    //     MyCollection = Backbone.Collection.extend({ /* normal collection init code here */});
-    //     Cocktail.mixin(MyCollection, backboneMixins.mixins.collection);
-    //
-    // usage (without Cocktail):
-    //
-    //     var socket = io.connect('http://localhost:3000'),
-    //         backboneMixins = new BackboneSocketio(socket),
-    //         SocketModel = Backbone.Model.extend(backboneMixins.mixins.model),
-    //         SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection),
-    //         MyModel, MyCollection;
-    //     
-    //     MyModel = SocketModel.extend({
-    //         // normal model init code here
-    //         initialize: function () {
-    //             // if you need an initialize method make sure you call the parent's
-    //             // initialize function
-    //             MyModel.__super__.initialize.call(this);
-    //         }
-    //     });
-    //     
-    //     MyCollection = SocketCollection.extend({
-    //         // normal collection init code here
-    //         initialize: function () {
-    //             // if you need an initialize method make sure you call the parent's
-    //             // initialize function
-    //             MyCollection.__super__.initialize.call(this);
-    //         }
-    //     });
-    var BackboneSocketio = function (ioSocket) {
-        this.mixins = {
-            collection: {
-                initialize: function () {
-                    if (!(this instanceof Backbone.Collection)) {
-                        throw new Error("This object is not a Backbone.Collection");
+    var defineBackboneSocketio = function(global, Backbone, _) {
+
+        // ## initialization function
+        //
+        // usage (with [Cocktail](https://github.com/onsi/cocktail)):
+        //
+        //     var socket = io.connect('http://localhost:3000'),
+        //         backboneMixins = new BackboneSocketio(socket),
+        //         MyModel, MyCollection;
+        //     
+        //     MyModel = Backbone.Model.extend({ /* normal model init code here */ });
+        //     Cocktail.mixin(MyModel, backboneMixins.mixins.model);
+        //     
+        //     MyCollection = Backbone.Collection.extend({ /* normal collection init code here */});
+        //     Cocktail.mixin(MyCollection, backboneMixins.mixins.collection);
+        //
+        // usage (without Cocktail):
+        //
+        //     var socket = io.connect('http://localhost:3000'),
+        //         backboneMixins = new BackboneSocketio(socket),
+        //         SocketModel = Backbone.Model.extend(backboneMixins.mixins.model),
+        //         SocketCollection = Backbone.Collection.extend(backboneMixins.mixins.collection),
+        //         MyModel, MyCollection;
+        //     
+        //     MyModel = SocketModel.extend({
+        //         // normal model init code here
+        //         initialize: function () {
+        //             // if you need an initialize method make sure you call the parent's
+        //             // initialize function
+        //             MyModel.__super__.initialize.call(this);
+        //         }
+        //     });
+        //     
+        //     MyCollection = SocketCollection.extend({
+        //         // normal collection init code here
+        //         initialize: function () {
+        //             // if you need an initialize method make sure you call the parent's
+        //             // initialize function
+        //             MyCollection.__super__.initialize.call(this);
+        //         }
+        //     });
+        var BackboneSocketio = function (ioSocket) {
+            var backboneSocket = this;
+            this.generateUuid4 = function() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+                    /[xy]/g,
+                    function(c) {
+                        var r = Math.random() * 16|0;
+                        if (c === 'y') {
+                            r = r & 0x3 | 0x8;
+                        }
+                        return r.toString(16);
                     }
-
-                    var uniqueSocketId = _.uniqueId("socketEventCollection"),
-                        emitData = { id: uniqueSocketId },
-                        that = this;
-
-                    // give the socket a unique ID so we can make sure events
-                    // only are applied to the correct collection(s)
-                    this.socketId = uniqueSocketId;
-
-                    // publish `add` collection event to socket
-                    this.on("add", function (model, changedCollection, options) {
-                        if (!options.triggeredBySocket) {
-                            ioSocket.emit("Backbone.Collection.add", _.extend(_.clone(emitData), {
-                                model: model.toJSON(),
-                                modelSocketId: model.socketId,
-                                index: changedCollection.models.indexOf(model)
-                            }));
+                );
+            };
+            this.matchObjectIds = function (a, b) {
+                return ((a.id !== undefined && b.id === a.id) ||
+                        (a.id === undefined && b.cid === a.cid));
+            };
+            this.mixins = {
+                collection: {
+                    constructor: function (models, options) {
+                      Backbone.Collection.call(this, models, options);
+                      this.id = options.id;
+                    },
+                    initialize: function () {
+                        if (!(this instanceof Backbone.Collection)) {
+                            throw new Error("This object is not a Backbone.Collection");
                         }
-                    });
 
-                    // publish `remove` collection event to socket
-                    this.on("remove", function (model, changedCollection, options) {
-                        if (!options.triggeredBySocket) {
-                            ioSocket.emit("Backbone.Collection.remove", _.extend(_.clone(emitData), {
-                                modelSocketId: model.socketId
-                            }));
-                        }
-                    });
+                        var that = this;
 
-                    // publish `sort` collection event to socket
-                    this.on("sort", function (changedCollection, options) {
-                        if (!options.triggeredBySocket) {
-                            ioSocket.emit("Backbone.Collection.sort", _.clone(emitData));
-                        }
-                    });
+                        // give the collection globally a unique ID so we can make sure events
+                        // only are applied to the correct collection(s)
+                        that.cid = backboneSocket.generateUuid4();
 
-                    // apply `add` socket event back to the appropriate collection
-                    ioSocket.on("Backbone.Collection.add", function (data) {
-                        if (data.id === that.socketId) {
-                            that.add(data.model, {
-                                at: data.index,
-                                triggeredBySocket: true
-                            });
-                            that.at(data.index).socketId = data.modelSocketId;
-                        }
-                    });
+                        // publish `add` collection event to socket
+                        this.on("add", function (model, changedCollection, options) {
+                            if (!options.triggeredBySocket) {
+                                var modelData = model.toJSON();
+                                modelData.cid = model.cid;
+                                ioSocket.emit("Backbone.Collection.add", {
+                                    id: that.id,
+                                    cid: that.cid,
+                                    model: modelData,
+                                    index: changedCollection.models.indexOf(model)
+                                });
+                            }
+                        });
 
-                    // apply `remove` socket event back to the appropriate collection
-                    ioSocket.on("Backbone.Collection.remove", function (data) {
-                        if (data.id === that.socketId) {
-                            var modelToRemove;
+                        // publish `remove` collection event to socket
+                        this.on("remove", function (model, changedCollection, options) {
+                            if (!options.triggeredBySocket) {
+                                ioSocket.emit("Backbone.Collection.remove", {
+                                    id: that.id,
+                                    cid: that.cid,
+                                    model: {cid: model.cid, id: mode.id}
+                                });
+                            }
+                        });
 
-                            that.each(function (model) {
-                                if (model.socketId === data.modelSocketId) {
-                                    modelToRemove = model;
-                                }
-                            });
-                            that.remove(modelToRemove, { triggeredBySocket: true });
-                        }
-                    });
+                        // publish `sort` collection event to socket
+                        this.on("sort", function (changedCollection, options) {
+                            if (!options.triggeredBySocket) {
+                                ioSocket.emit("Backbone.Collection.sort", {
+                                    id: that.id,
+                                    cid: that.cid
+                                });
+                            }
+                        });
 
-                    // apply `sort` socket event back to the appropriate collection
-                    ioSocket.on("Backbone.Collection.sort", function (data) {
-                        if (data.id === that.socketId) {
-                            that.sort({ triggeredBySocket: true });
-                        }
-                    });
-                }
-            },
+                        // apply `add` socket event back to the appropriate collection
+                        ioSocket.on("Backbone.Collection.add", function (data) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
+                                that.add(data.model, {
+                                    at: data.index,
+                                    triggeredBySocket: true
+                                });
+                            }
+                        });
 
-            model: {
-                initialize: function () {
-                    if (!(this instanceof Backbone.Model)) {
-                        throw new Error("This object is not a Backbone.Model");
+                        // apply `remove` socket event back to the appropriate collection
+                        ioSocket.on("Backbone.Collection.remove", function (data) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
+                                var modelToRemove;
+
+                                that.each(function (model) {
+                                    if (backboneSocket.matchObjectIds(model, data.model)) {
+                                        modelToRemove = model;
+                                    }
+                                });
+                                that.remove(modelToRemove, { triggeredBySocket: true });
+                            }
+                        });
+
+                        // apply `sort` socket event back to the appropriate collection
+                        ioSocket.on("Backbone.Collection.sort", function (data) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
+                                that.sort({ triggeredBySocket: true });
+                            }
+                        });
                     }
+                },
 
-                    var uniqueSocketId = _.uniqueId("socketEventModel"),
-                        that = this;
-
-                    // give the socket a unique ID so we can make sure events
-                    // only are applied to the correct collection(s)
-                    this.socketId = uniqueSocketId;
-
-                    // publish model `change` events to socket
-                    this.on("change", function (changedModel, options) {
-                        if (!options.triggeredBySocket) {
-                            ioSocket.emit("Backbone.Model.change", {
-                                id: that.socketId,
-                                updates: that.changed
-                            });
+                model: {
+                    initialize: function () {
+                        if (!(this instanceof Backbone.Model)) {
+                            throw new Error("This object is not a Backbone.Model");
                         }
-                    });
 
-                    // apply socket events to appropriate model
-                    ioSocket.on("Backbone.Model.change", function (data) {
-                        if (data.id === that.socketId) {
-                            that.set(data.updates, { triggeredBySocket: true });
-                        }
-                    });
+                        var that = this;
+
+                        // give the model a globally unique ID so we can make sure events
+                        // only are applied to the correct collection(s)
+                        that.cid = backboneSocket.generateUuid4();
+
+                        // publish model `change` events to socket
+                        this.on("change", function (changedModel, options) {
+                            if (!options.triggeredBySocket) {
+                                ioSocket.emit("Backbone.Model.change", {
+                                    id: that.id,
+                                    cid: that.cid,
+                                    updates: that.changed
+                                });
+                            }
+                        });
+
+                        // apply socket events to appropriate model
+                        ioSocket.on("Backbone.Model.change", function (data) {
+                            if (backboneSocket.matchObjectIds(that, data)) {
+                                that.set(data.updates, { triggeredBySocket: true });
+                            }
+                        });
+                    }
                 }
-            }
+            };
         };
+
+        return BackboneSocketio;
     };
 
     // module definition setup
+    var g = this;
     if (typeof define === 'function' && define.amd) {
-        define([], function () {
-            return BackboneSocketio;
+        define(["backbone", "underscore"], function (Backbone, _) {
+            return defineBackboneSocketio(g, Backbone, _);
         });
     } else if (typeof module !== 'undefined' && module.exports) {
-        module.exports = BackboneSocketio;
+        var Backbone = require("backbone");
+        var _ = require("underscore");
+        module.exports = defineBackboneSocketio(g, Backbone, _);
     } else {
-        global.BackboneSocketio = BackboneSocketio;
+        g.BackboneSocketio = defineBackboneSocketio(g, g.Backbone, g._);
     }
-})(this, Backbone, _);
+})();

@@ -7,14 +7,15 @@
  */
 
 'use strict';
+var Emitter = require('events').EventEmitter;
 
-exports.init = function (io) {
-    if (!io) {
+exports.init = function (socketio) {
+    if (!socketio) {
         throw new Error("Expected one argument; received zero");
     }
 
     // set up websockets
-    io.sockets.on('connection', function (socket) {
+    socketio.on('connection', function (socket) {
         var eventTypes = [
             'Backbone.Model.change',
             'Backbone.Collection.add',
@@ -26,6 +27,7 @@ exports.init = function (io) {
         eventTypes.forEach(function (type) {
             socket.on(type, function (data) {
                 socket.broadcast.emit(type, data);
+                Emitter.prototype.emit.call(socketio, type, data);
             });
         });
     });
